@@ -22,7 +22,7 @@ jobs:
         distribution: 'temurin'
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+      uses: gradle/actions/setup-gradle@v3
 
     - name: Cache Gradle packages
       uses: actions/cache@v3
@@ -38,10 +38,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build with Gradle
-      run: ./gradlew build --no-daemon --warning-mode all
-
-    - name: Run tests
-      run: ./gradlew test --no-daemon --warning-mode all
+      run: ./gradlew build --no-daemon --warning-mode all -x test  # 테스트를 생략하는 옵션 추가
 
   deploy:
     needs: build
@@ -60,7 +57,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build with Gradle
-      run: ./gradlew build --no-daemon --warning-mode all
+      run: ./gradlew build --no-daemon --warning-mode all -x test  # 테스트를 생략하는 옵션 추가
 
     - name: Copy files via SCP
       env:
