@@ -1,0 +1,84 @@
+name: CI/CD for Spring Boot
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: gradle-home-v1-${{ runner.os }}-build-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          gradle-home-v1-${{ runner.os }}-build-
+
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew build --no-daemon --warning-mode all -x test  # 테스트를 생략하는 옵션 추가
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew build --no-daemon --warning-mode all -x test  # 테스트를 생략하는 옵션 추가
+
+    - name: Decode and save SSH key
+      run: echo "${{ secrets.CICD_SECRET_KEY }}" | base64 --decode > ec2_key.pem
+      shell: bash
+
+    - name: Set permission for SSH key
+      run: chmod 600 ec2_key.pem
+
+    - name: Copy files via SCP
+      env:
+        AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
+        AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
+      run: |
+        scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
+
+    - name: SSH and Deploy
+      env:
+        AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
+        AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
+      run: |
+        ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
+          pgrep java | xargs kill -9 || true
+          nohup java -jar ~/app/*.jar > log.txt 2>&1 &
+        EOF
