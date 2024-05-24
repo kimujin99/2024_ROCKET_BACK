@@ -2,9 +2,9 @@ name: CI/CD for Spring Boot
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -38,7 +38,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build with Gradle
-      run: ./gradlew build --no-daemon --warning-mode all -x test  # 테스트를 생략하는 옵션 추가
+      run: ./gradlew build --no-daemon --warning-mode all -x test
 
   deploy:
     needs: build
@@ -57,7 +57,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build with Gradle
-      run: ./gradlew build --no-daemon --warning-mode all -x test  # 테스트를 생략하는 옵션 추가
+      run: ./gradlew build --no-daemon --warning-mode all -x test
 
     - name: Decode and save SSH key
       run: echo "${{ secrets.CICD_SECRET_KEY }}" | base64 --decode > ec2_key.pem
@@ -65,6 +65,11 @@ jobs:
 
     - name: Set permission for SSH key
       run: chmod 600 ec2_key.pem
+
+    - name: Check connection to EC2
+      run: |
+        echo "Pinging $AWS_EC2_HOST"
+        ping -c 4 $AWS_EC2_HOST
 
     - name: Copy files via SCP
       env:
