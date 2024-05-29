@@ -39,6 +39,9 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew bootJar --no-daemon --warning-mode all -x test  # bootJar 사용
 
+      - name: List build directory contents
+        run: ls -al build/libs
+
       - name: Copy application-ec2-template.yaml to build/libs
         run: cp src/main/resources/application-ec2-template.yaml build/libs/application-ec2-template.yaml
 
