@@ -30,7 +30,6 @@ jobs:
           key: gradle-home-v1-${{ runner.os }}-build-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             gradle-home-v1-${{ runner.os }}-build-
-
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
 
@@ -38,7 +37,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build --no-daemon --warning-mode all -x test  # 테스트를 생략하는 옵션 추가
+        run: ./gradlew build —no-daemon —warning-mode all -x test  # 테스트를 생략하는 옵션 추가
 
   deploy:
     needs: build
@@ -66,22 +65,23 @@ jobs:
       - name: Set permission for SSH key
         run: chmod 600 ec2_key.pem
 
+      - name: Decode and save keystore file
+        run: echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > keystore.p12
+        shell: bash
+
       - name: Create target directory on EC2
         env:
           AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
           AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST 'mkdir -p ~/app/'
-
       - name: Copy files via SCP
         env:
           AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
           AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
         run: |
           scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no path/to/nginx.conf $AWS_EC2_USER@$AWS_EC2_HOST:~/app/nginx.conf
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no path/to/keystore.p12 $AWS_EC2_USER@$AWS_EC2_HOST:~/app/keystore.p12
-
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no keystore.p12 $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
       - name: SSH and Deploy
         env:
           AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
@@ -89,9 +89,5 @@ jobs:
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
             pgrep java | xargs kill -9 || true
-            nohup java -jar ~/app/*.jar > log.txt 2>&1 &
-
-            sudo cp ~/app/nginx.conf /etc/nginx/nginx.conf
-            sudo cp ~/app/keystore.p12 /etc/ssl/private/keystore.p12
-            sudo systemctl restart nginx
+            nohup java -jar ~/app/*.jar —spring.config.location=classpath:/application-ec2.yaml > log.txt 2>&1 &
           EOF
