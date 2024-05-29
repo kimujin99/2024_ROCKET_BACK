@@ -79,6 +79,8 @@ jobs:
           AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
         run: |
           scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no path/to/nginx.conf $AWS_EC2_USER@$AWS_EC2_HOST:~/app/nginx.conf
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no path/to/keystore.p12 $AWS_EC2_USER@$AWS_EC2_HOST:~/app/keystore.p12
 
       - name: SSH and Deploy
         env:
@@ -88,4 +90,8 @@ jobs:
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
             pgrep java | xargs kill -9 || true
             nohup java -jar ~/app/*.jar > log.txt 2>&1 &
+
+            sudo cp ~/app/nginx.conf /etc/nginx/nginx.conf
+            sudo cp ~/app/keystore.p12 /etc/ssl/private/keystore.p12
+            sudo systemctl restart nginx
           EOF
