@@ -90,9 +90,9 @@ jobs:
           AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
           AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
         run: |
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/rocket-back-0.0.1-SNAPSHOT.jar $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
           scp -i ec2_key.pem -o StrictHostKeyChecking=no keystore.p12 $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/application-ec2-template.yaml $AWS_EC2_USER@$AWS_EC2_HOST:~/app/application-ec2.yaml
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no src/main/resources/application-ec2-template.yaml $AWS_EC2_USER@$AWS_EC2_HOST:~/app/application-ec2.yaml
 
       - name: Create application-ec2.yaml on EC2
         env:
