@@ -30,6 +30,7 @@ jobs:
           key: gradle-home-v1-${{ runner.os }}-build-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             gradle-home-v1-${{ runner.os }}-build-
+
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
 
@@ -43,7 +44,7 @@ jobs:
         run: ls -al build
 
       - name: List build/libs directory contents
-        run: ls -al build/libs
+        run: ls -al build/libs || echo "Directory does not exist"
 
       - name: Copy application-ec2-template.yaml to build/libs
         run: cp src/main/resources/application-ec2-template.yaml build/libs/application-ec2-template.yaml
