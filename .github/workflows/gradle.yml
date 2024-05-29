@@ -83,42 +83,4 @@ jobs:
           AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
           AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
         run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST 'mkdir -p ~/app/'
-
-      - name: Copy files via SCP
-        env:
-          AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
-          AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
-        run: |
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/rocket-back-0.0.1-SNAPSHOT.jar $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no keystore.p12 $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/application-ec2-template.yaml $AWS_EC2_USER@$AWS_EC2_HOST:~/app/application-ec2.yaml
-
-      - name: Create application-ec2.yaml on EC2
-        env:
-          AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
-          AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
-            cp /home/ubuntu/app/application-ec2-template.yaml /home/ubuntu/app/application-ec2.yaml
-            sed -i "s/\${DB_HOST}/$DB_HOST/g" /home/ubuntu/app/application-ec2.yaml
-            sed -i "s/\${DB_NAME}/$DB_NAME/g" /home/ubuntu/app/application-ec2.yaml
-            sed -i "s/\${DB_USERNAME}/$DB_USERNAME/g" /home/ubuntu/app/application-ec2.yaml
-            sed -i "s/\${DB_PASSWORD}/$DB_PASSWORD/g" /home/ubuntu/app/application-ec2.yaml
-            sed -i "s/\${KEYSTORE_PASSWORD}/$KEYSTORE_PASSWORD/g" /home/ubuntu/app/application-ec2.yaml
-          EOF
-
-      - name: SSH and Deploy
-        env:
-          AWS_EC2_USER: ${{ secrets.CICD_ACCESS_USER }}
-          AWS_EC2_HOST: ${{ secrets.CICD_ACCESS_HOST }}
-        run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
-            pgrep java | xargs kill -9 || true
-            nohup java -jar ~/app/rocket-back-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application-ec2.yaml > log.txt 2>&1 &
-          EOF
+          ssh -i ec2_key.pem -o StrictHostKey
