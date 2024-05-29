@@ -83,6 +83,7 @@ jobs:
         run: |
           scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
           scp -i ec2_key.pem -o StrictHostKeyChecking=no keystore.p12 $AWS_EC2_USER@$AWS_EC2_HOST:~/app/
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no application-ec2-template.yaml $AWS_EC2_USER@$AWS_EC2_HOST:~/app/application-ec2.yaml
 
       - name: Create application-ec2.yaml on EC2
         env:
@@ -91,17 +92,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
-            echo "spring:
-  profiles: ec2
-
-server:
-  port: 443
-  ssl:
-    key-store-type: PKCS12
-    key-store: /home/ubuntu/app/keystore.p12
-    key-store-password: ${KEYSTORE_PASSWORD}
-    key-alias: tomcat
-" > /home/ubuntu/app/application-ec2.yaml
+            sed -i "s/\${KEYSTORE_PASSWORD}/$KEYSTORE_PASSWORD/g" /home/ubuntu/app/application-ec2.yaml
           EOF
 
       - name: SSH and Deploy
@@ -111,5 +102,5 @@ server:
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
             pgrep java | xargs kill -9 || true
-            nohup java -jar ~/app/*.jar —spring.config.location=file:/home/ubuntu/app/application-ec2.yaml > log.txt 2>&1 &
+            nohup java -jar ~/app/*.jar --spring.config.location=file:/home/ubuntu/app/application-ec2.yaml > log.txt 2>&1 &
           EOF
