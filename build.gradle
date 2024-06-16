@@ -36,6 +36,14 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-springBoot {
-    mainClass = 'com.toy.rocketback.RocketBackApplication'
+bootJar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.toy.rocketback.RocketBackApplication'
+        )
+    }
+}
+
+jar {
+    enabled = false
 }
