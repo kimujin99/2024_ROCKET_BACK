@@ -36,6 +36,10 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+bootJar {
+    mainClassName = 'com.toy.rocketback.RocketBackApplication'
+}
+
 springBoot {
     mainClass = 'com.toy.rocketback.RocketBackApplication'
 }
