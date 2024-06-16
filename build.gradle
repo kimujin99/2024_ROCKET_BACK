@@ -37,5 +37,5 @@ tasks.named('test') {
 }
 
 springBoot {
-    mainClass = 'com.toy.RocketBackApplication'
+    mainClass = 'com.toy.rocketback.RocketBackApplication'
 }
